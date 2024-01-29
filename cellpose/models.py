@@ -78,12 +78,24 @@ class Cellpose():
         recommended if you want to use a specific GPU (e.g. torch.device('cuda:1'))
 
     """
-    def __init__(self, gpu=False, model_type='cyto', net_avg=False, device=None):
+
+    def __init__(
+        self,
+        gpu=False,
+        model_type='cyto',
+        net_avg=False,
+        device=None,
+        intel_machine: bool = False,
+    ):
         super(Cellpose, self).__init__()
         self.torch = True
-        
-        # assign device (GPU or CPU)
-        sdevice, gpu = assign_device(self.torch, gpu)
+
+        # assign device (GPU - for both Intel and NVIDIA - or CPU)
+        sdevice, gpu = assign_device(
+            self.torch,
+            gpu,
+            intel_machine=intel_machine,
+        )
         self.device = device if device is not None else sdevice
         self.gpu = gpu
         
@@ -311,12 +323,21 @@ class CellposeModel(UnetModel):
         (cyto + nuclei) or (nuclei + zeros)
     
     """
-    
-    def __init__(self, gpu=False, pretrained_model=False, 
-                    model_type=None, net_avg=False,
-                    diam_mean=30., device=None,
-                    residual_on=True, style_on=True, concatenation=False,
-                    nchan=2):
+
+    def __init__(
+        self,
+        gpu=False,
+        pretrained_model=False,
+        model_type=None,
+        net_avg=False,
+        diam_mean=30.,
+        device=None,
+        residual_on=True,
+        style_on=True,
+        concatenation=False,
+        nchan=2,
+        intel_machine: bool = False,
+    ):
         self.torch = True
         if isinstance(pretrained_model, np.ndarray):
             pretrained_model = list(pretrained_model)
@@ -362,10 +383,18 @@ class CellposeModel(UnetModel):
 
                 
         # initialize network
-        super().__init__(gpu=gpu, pretrained_model=False,
-                         diam_mean=self.diam_mean, net_avg=net_avg, device=device,
-                         residual_on=residual_on, style_on=style_on, concatenation=concatenation,
-                        nchan=nchan)
+        super().__init__(
+            gpu=gpu,
+            pretrained_model=False,
+            diam_mean=self.diam_mean,
+            net_avg=net_avg,
+            device=device,
+            residual_on=residual_on,
+            style_on=style_on,
+            concatenation=concatenation,
+            nchan=nchan,
+            intel_machine=intel_machine,
+        )
 
         self.unet = False
         self.pretrained_model = pretrained_model
