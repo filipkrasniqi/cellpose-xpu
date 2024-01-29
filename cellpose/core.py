@@ -66,33 +66,41 @@ def _use_gpu_torch(gpu_number=0):
         core_logger.info('TORCH CUDA version not installed/working.')
         return False
 
-def assign_device(use_torch=True, gpu=False, device=0):
+
+def assign_device(use_torch=True,
+                  gpu=False,
+                  intel_machine: bool = False,
+                  device=0):
     mac = False
     cpu = True
     if isinstance(device, str):
-        if device=='mps':
-            mac = True 
+        if device == 'mps':
+            mac = True
         else:
             device = int(device)
-    if gpu and use_gpu(use_torch=True):
-        device = torch.device(f'cuda:{device}')
-        gpu=True
-        cpu=False
-        core_logger.info('>>>> using GPU')
-    elif mac:
-        try:
-            device = torch.device('mps')
-            gpu=True
-            cpu=False
+    if gpu and intel_machine:
+        device = torch.device("xpu")
+        cpu = False
+    else:
+        if gpu and use_gpu(use_torch=True):
+            device = torch.device(f'cuda:{device}')
+            gpu = True
+            cpu = False
             core_logger.info('>>>> using GPU')
-        except:
-            cpu = True 
-            gpu = False
+        elif mac:
+            try:
+                device = torch.device('mps')
+                gpu = True
+                cpu = False
+                core_logger.info('>>>> using GPU')
+            except:
+                cpu = True
+                gpu = False
 
     if cpu:
         device = torch.device('cpu')
         core_logger.info('>>>> using CPU')
-        gpu=False
+        gpu = False
     return device, gpu
 
 def check_mkl(use_torch=True):
