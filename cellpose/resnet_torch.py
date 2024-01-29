@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
 import datetime
-
+import intel_extension_for_pytorch as ipex
 
 from . import transforms, io, dynamics, utils
 
@@ -177,10 +177,19 @@ class upsample(nn.Module):
         return x
     
 class CPnet(nn.Module):
-    def __init__(self, nbase, nout, sz,
-                residual_on=True, style_on=True, 
-                concatenation=False, mkldnn=False,
-                diam_mean=30.):
+
+    def __init__(
+        self,
+        nbase,
+        nout,
+        sz,
+        residual_on=True,
+        style_on=True,
+        concatenation=False,
+        mkldnn=False,
+        diam_mean=30.,
+        intel_machine: bool = False,
+    ):
         super(CPnet, self).__init__()
         self.nbase = nbase
         self.nout = nout
@@ -195,10 +204,22 @@ class CPnet(nn.Module):
         self.upsample = upsample(nbaseup, sz, residual_on=residual_on, concatenation=concatenation)
         self.make_style = make_style()
         self.output = batchconv(nbaseup[0], nout, 1)
-        self.diam_mean = nn.Parameter(data=torch.ones(1) * diam_mean, requires_grad=False)
-        self.diam_labels = nn.Parameter(data=torch.ones(1) * diam_mean, requires_grad=False)
+        diam_mean_data = torch.ones(1)
+        diam_labels_data = torch.ones(1)
+        if intel_machine:
+            diam_mean_data = diam_mean_data.to("xpu")
+            diam_labels_data = diam_labels_data.to("xpu")
+        self.diam_mean = nn.Parameter(
+            data=diam_mean_data * diam_mean,
+            requires_grad=False,
+        )
+        self.diam_labels = nn.Parameter(
+            data=diam_labels_data * diam_mean,
+            requires_grad=False,
+        )
         self.style_on = style_on
-        
+        self.intel_machine = intel_machine
+
     def forward(self, data):
         if self.mkldnn:
             data = data.to_mkldnn()
