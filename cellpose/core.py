@@ -190,7 +190,7 @@ class UnetModel():
 
         if intel_machine:
             import intel_extension_for_pytorch as ipex
-            self.net = model.cp.net.to("xpu")
+            self.net = self.net.to("xpu")
             self.net.eval()
             self.net, _ = ipex.optimize(
                 model=self.net,
