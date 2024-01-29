@@ -124,21 +124,40 @@ def check_mkl(
     return mkl_enabled
 
 class UnetModel():
-    def __init__(self, gpu=False, pretrained_model=False,
-                    diam_mean=30., net_avg=False, device=None,
-                    residual_on=False, style_on=False, concatenation=True,
-                    nclasses=3, nchan=2):
+
+    def __init__(
+        self,
+        gpu=False,
+        pretrained_model=False,
+        diam_mean=30.,
+        net_avg=False,
+        device=None,
+        residual_on=False,
+        style_on=False,
+        concatenation=True,
+        nclasses=3,
+        nchan=2,
+        intel_machine: bool = False,
+    ):
+        self.intel_machine = intel_machine
         self.unet = True
         self.torch = True
         self.mkldnn = None
         if device is None:
-            sdevice, gpu = assign_device(self.torch, gpu)
+            sdevice, gpu = assign_device(
+                self.torch,
+                gpu,
+                intel_machine=intel_machine,
+            )
         self.device = device if device is not None else sdevice
         if device is not None:
             device_gpu = self.device.type=='cuda'
         self.gpu = gpu if device is None else device_gpu
         if not self.gpu:
-            self.mkldnn = check_mkl(True)
+            self.mkldnn = check_mkl(
+                True,
+                intel_machine=intel_machine,
+            )
         self.pretrained_model = pretrained_model
         self.diam_mean = diam_mean
 
@@ -154,15 +173,27 @@ class UnetModel():
         self.nbase = [32,64,128,256]
         self.nchan = nchan
         self.nbase = [nchan, 32, 64, 128, 256]
-        self.net = resnet_torch.CPnet(self.nbase, 
-                                        self.nclasses, 
-                                        sz=3,
-                                        residual_on=residual_on, 
-                                        style_on=style_on,
-                                        concatenation=concatenation,
-                                        mkldnn=self.mkldnn,
-                                        diam_mean=diam_mean).to(self.device)
-        
+        self.net = resnet_torch.CPnet(
+            self.nbase,
+            self.nclasses,
+            sz=3,
+            residual_on=residual_on,
+            style_on=style_on,
+            concatenation=concatenation,
+            mkldnn=self.mkldnn,
+            diam_mean=diam_mean,
+            intel_machine=intel_machine,
+        ).to(self.device)
+
+        if intel_machine:
+            import intel_extension_for_pytorch as ipex
+            model.cp.net = model.cp.net.to("xpu")
+            model.cp.net.eval()
+            model.cp.net, _ = ipex.optimize(
+                model=model.cp.net,
+                dtype=torch.float32,
+            )
+
         if pretrained_model is not None and isinstance(pretrained_model, str):
             self.net.load_model(pretrained_model, device=self.device)
 
