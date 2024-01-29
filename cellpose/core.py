@@ -103,15 +103,24 @@ def assign_device(use_torch=True,
         gpu = False
     return device, gpu
 
-def check_mkl(use_torch=True):
+
+def check_mkl(
+    use_torch=True,
+    intel_machine: bool = False,
+):
+    if intel_machine:
+        return False
     #core_logger.info('Running test snippet to check if MKL-DNN working')
     mkl_enabled = torch.backends.mkldnn.is_available()
     if mkl_enabled:
         mkl_enabled = True
         #core_logger.info('MKL version working - CPU version is sped up.')
     else:
-        core_logger.info('WARNING: MKL version on torch not working/installed - CPU version will be slightly slower.')
-        core_logger.info('see https://pytorch.org/docs/stable/backends.html?highlight=mkl')
+        core_logger.info(
+            'WARNING: MKL version on torch not working/installed - CPU version will be slightly slower.'
+        )
+        core_logger.info(
+            'see https://pytorch.org/docs/stable/backends.html?highlight=mkl')
     return mkl_enabled
 
 class UnetModel():
