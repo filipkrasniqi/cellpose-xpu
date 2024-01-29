@@ -114,11 +114,14 @@ class Cellpose():
         if nuclear:
             self.diam_mean = 17.
 
-        self.cp = CellposeModel(device=self.device,
-                                gpu=self.gpu,
-                                model_type=model_type,
-                                diam_mean=self.diam_mean,
-                                net_avg=net_avg)
+        self.cp = CellposeModel(
+            device=self.device,
+            gpu=self.gpu,
+            model_type=model_type,
+            diam_mean=self.diam_mean,
+            net_avg=net_avg,
+            intel_machine=intel_machine,
+        )
         self.cp.model_type = model_type
 
         # size model not used for bacterial model
