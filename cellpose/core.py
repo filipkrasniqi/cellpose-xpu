@@ -192,7 +192,7 @@ class UnetModel():
             import intel_extension_for_pytorch as ipex
             self.net = self.net.to("xpu")
             self.net.eval()
-            self.net, _ = ipex.optimize(
+            self.net = ipex.optimize(
                 model=self.net,
                 dtype=torch.float32,
             )
