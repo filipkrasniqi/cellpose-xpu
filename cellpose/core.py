@@ -160,7 +160,7 @@ class UnetModel():
         self.gpu = gpu if device is None else device_gpu
         if not self.gpu:
             self.mkldnn = check_mkl(
-                True,
+                use_torch=True,
                 intel_machine=intel_machine,
             )
         self.pretrained_model = pretrained_model
@@ -190,10 +190,10 @@ class UnetModel():
 
         if intel_machine:
             import intel_extension_for_pytorch as ipex
-            model.cp.net = model.cp.net.to("xpu")
-            model.cp.net.eval()
-            model.cp.net, _ = ipex.optimize(
-                model=model.cp.net,
+            self.net = model.cp.net.to("xpu")
+            self.net.eval()
+            self.net, _ = ipex.optimize(
+                model=self.net,
                 dtype=torch.float32,
             )
 
